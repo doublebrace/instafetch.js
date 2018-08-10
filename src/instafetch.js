@@ -15,7 +15,37 @@ const defaults = {
   accessToken: null,
   target: 'instafetch',
   numOfPics: 20,
-  caption: false
+  caption: false,
+  onSuccess: (json, options) => {
+    targetEl = document.getElementById(options.target);
+    if (!targetEl) {
+      console.error(`No element with id="${options.target}" was found on the page.`);
+      return;
+    }
+
+    json.data.forEach(data => {
+      article = document.createElement('article');
+      a = document.createElement('a');
+      a.href = data.link;
+      a.target = '_blank';
+      figure = document.createElement('figure');
+      img = document.createElement('img');
+      img.src = data.images.standard_resolution.url;
+      figure.appendChild(img);
+      a.appendChild(figure);
+      article.appendChild(a);
+
+      if (options.caption && data.caption) {
+        div = document.createElement('div');
+        p = document.createElement('p');
+        p.innerHTML = data.caption.text;
+        div.appendChild(p);
+        a.appendChild(div);
+      }
+
+      targetEl.appendChild(article);
+    });
+  }
 };
 
 //
@@ -104,49 +134,12 @@ const fetchFeed = options => {
 
   fetchJsonp(url).then(response => response.json()).then(json => {
     if (json.meta.code === 200) {
-      displayFeed(json, options);
+      settings.onSuccess(json, options);
     } else {
       console.error(json.meta.error_message);
     }
   }).catch(error => {
     console.error(error);
-  });
-};
-
-/**
- * Display JSON data from fetch
- * @private
- * @param {Object} json JSON data
- * @returns Stop if no element, display if element
- */
-const displayFeed = (json, options) => {
-  targetEl = document.getElementById(options.target);
-  if (!targetEl) {
-    console.error(`No element with id="${options.target}" was found on the page.`);
-    return;
-  }
-
-  json.data.forEach(data => {
-    article = document.createElement('article');
-    a = document.createElement('a');
-    a.href = data.link;
-    a.target = '_blank';
-    figure = document.createElement('figure');
-    img = document.createElement('img');
-    img.src = data.images.standard_resolution.url;
-    figure.appendChild(img);
-    a.appendChild(figure);
-    article.appendChild(a);
-
-    if (options.caption && data.caption) {
-      div = document.createElement('div');
-      p = document.createElement('p');
-      p.innerHTML = data.caption.text;
-      div.appendChild(p);
-      a.appendChild(div);
-    }
-
-    targetEl.appendChild(article);
   });
 };
 
